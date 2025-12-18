@@ -1,2 +1,5 @@
 # DevOPs-with-kubernets
-This repository is made to submit the excercises from DevOPs with kubernets course.
+This repository is used to store and submit exercises completed as part of the DevOps with Kubernetes course.
+
+# Chapter 2
+[1.1]()
