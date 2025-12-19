@@ -1,19 +1,46 @@
-const http = require('http');
-const PORT = process.env.PORT || 3000;
-let counter = 0;
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
 
-const server = http.createServer((req, res) => {
-  if (req.url === '/pingpong') {
-    console.log(`Request number ${counter} received`);
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end(`pong ${counter}`);
+const app = express();
+const port = 3000;
+
+// La ruta DEBE ser absoluta para evitar problemas en el contenedor
+const filePath = '/usr/src/app/files/pong.txt';
+const directory = '/usr/src/app/files';
+
+// Asegurar que la carpeta existe antes de leer
+if (!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true });
+}
+
+// 1. Intentar recuperar el contador
+let counter = 0;
+try {
+    if (fs.existsSync(filePath)) {
+        const data = fs.readFileSync(filePath, 'utf8');
+        counter = parseInt(data) || 0;
+        console.log(`Contador recuperado: ${counter}`);
+    }
+} catch (err) {
+    console.error('Error al leer el archivo de persistencia:', err);
+}
+
+// 2. Rutas
+app.get('/pingpong', (req, res) => {
     counter++;
-  } else {
-    res.writeHead(404);
-    res.end();
-  }
+    try {
+        fs.writeFileSync(filePath, counter.toString());
+    } catch (err) {
+        console.error('Error al escribir el archivo:', err);
+    }
+    res.send(`pong ${counter}`);
 });
 
-server.listen(PORT, () => {
-  console.log(`Ping-pong app started on port ${PORT}`);
+app.get('/', (req, res) => {
+    res.send('Ping-pong server is running');
+});
+
+app.listen(port, () => {
+    console.log(`Ping-pong app listening at http://localhost:${port}`);
 });

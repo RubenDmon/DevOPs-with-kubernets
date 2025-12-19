@@ -13,18 +13,21 @@ spec:
         app: log-output
     spec:
       volumes:
-        - name: shared-logs
-          emptyDir: {}
+        - name: shared-data
+          persistentVolumeClaim:
+            claimName: ping-log-pvc
       containers:
-              - name: log-writer
-                image: rdmon14/writer:v3
-                command: ["node", "writer.js"] # Sobrescribe el CMD del Dockerfile
-                volumeMounts:
-                  - name: shared-logs
-                    mountPath: /usr/src/app/files
-              - name: log-reader
-                image: rdmon14/reader:v3
-                command: ["node", "reader.js"] # Sobrescribe el CMD del Dockerfile
-                volumeMounts:
-                  - name: shared-logs
-                    mountPath: /usr/src/app/files
+        - name: log-writer
+          image: rdmon14/writer:v5
+          command: ["node", "writer.js"]
+          volumeMounts:
+            - name: shared-data
+              mountPath: /usr/src/app/files
+        - name: log-reader
+          image: rdmon14/reader:v5
+          command: ["node", "reader.js"]
+          ports:
+            - containerPort: 3000
+          volumeMounts:
+            - name: shared-data
+              mountPath: /usr/src/app/files
