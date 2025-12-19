@@ -7,8 +7,6 @@ spec:
   selector:
     app: todo-app # This is the app as declared in the deployment.
   ports:
-    - name: http
-      nodePort: 30080 # This is the port that is available outside. Value for nodePort can be between 30000-32767
-      protocol: TCP
-      port: 80 # This is a port that is available to the cluster, in this case it can be ~ anything
-      targetPort: 8080 # This is the target port
+      - protocol: TCP
+        port: 80
+        targetPort: 8080 # El puerto de tu app de Node.js
