@@ -12,6 +12,19 @@ spec:
       labels:
         app: log-output
     spec:
+      volumes:
+        - name: shared-logs
+          emptyDir: {}
       containers:
-        - name: log-output
-          image: rdmon14/log_output:v2
+              - name: log-writer
+                image: rdmon14/writer:v3
+                command: ["node", "writer.js"] # Sobrescribe el CMD del Dockerfile
+                volumeMounts:
+                  - name: shared-logs
+                    mountPath: /usr/src/app/files
+              - name: log-reader
+                image: rdmon14/reader:v3
+                command: ["node", "reader.js"] # Sobrescribe el CMD del Dockerfile
+                volumeMounts:
+                  - name: shared-logs
+                    mountPath: /usr/src/app/files

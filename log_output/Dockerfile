@@ -5,7 +5,4 @@ FROM node:alpine
 WORKDIR /usr/src/app
 
 # Copiamos el archivo de código
-COPY index.js .
-
-# Comando para arrancar la aplicación
-CMD ["node", "index.js"]
+COPY . . 
