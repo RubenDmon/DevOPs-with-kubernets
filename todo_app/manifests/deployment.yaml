@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: todo-app
-          image: rdmon14/todo_app:v0.1
+          image: rdmon14/todo-app:v5
           env:
             - name: PORT
               value: "8080" # El puerto que el servidor escuchará internamente

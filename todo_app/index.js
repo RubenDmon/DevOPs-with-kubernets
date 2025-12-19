@@ -1,18 +1,25 @@
-server.listen(PORT, () => {
-  console.log(`Server started in port ${PORT}`);
-});
-
-
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
-// Leemos el puerto desde la variable de entorno o usamos 3000 por defecto
 const PORT = process.env.PORT || 3000;
 
 const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Todo App is running\n');
+    // Definimos la ruta al archivo HTML
+    const filePath = path.join(__dirname, 'index.html');
+
+    // Leemos el archivo
+    fs.readFile(filePath, (err, content) => {
+        if (err) {
+            res.writeHead(500);
+            res.end('Error loading index.html');
+            return;
+        }
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(content);
+    });
 });
 
 server.listen(PORT, () => {
-  console.log(`Server started in port ${PORT}`);
+    console.log(`Server started in port ${PORT}`);
 });
