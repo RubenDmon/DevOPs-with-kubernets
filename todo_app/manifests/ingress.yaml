@@ -1,13 +1,14 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: todo-app-ingress # Usamos el mismo nombre que ya tienes
+  name: todo-app-ingress
+  annotations:
+    # Esta línea es la clave: elimina el "/app" antes de enviarlo al pod
+    traefik.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
   - http:
       paths:
-      # RUTA 1: Log Output (Ejercicio 1.7/1.9)
-      # Ahora este es el dueño de la raíz "/"
       - path: /
         pathType: Prefix
         backend:
@@ -15,8 +16,6 @@ spec:
             name: log-output-svc
             port:
               number: 80
-
-      # RUTA 2: Ping-Pong (Ejercicio 1.9)
       - path: /pingpong
         pathType: Prefix
         backend:
@@ -24,9 +23,6 @@ spec:
             name: ping-pong-svc
             port:
               number: 80
-
-      # RUTA 3: Tu Todo App (Ejercicio 1.8)
-      # La movemos a "/app" para que no choque con la raíz
       - path: /app
         pathType: Prefix
         backend:
