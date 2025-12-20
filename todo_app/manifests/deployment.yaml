@@ -12,7 +12,6 @@ spec:
       labels:
         app: todo-app
     spec:
-      # AÑADE ESTO (dentro de spec, al mismo nivel que containers)
       dnsPolicy: "None"
       dnsConfig:
         nameservers:
@@ -24,7 +23,7 @@ spec:
             claimName: todo-image-pvc
       containers:
         - name: todo-app
-          image: rdmon14/todo_app:v13 # Sube una versión nueva
+          image: rdmon14/todo_app:v18 # Sube una versión nueva
           volumeMounts:
             - name: image-cache
               mountPath: /usr/src/app/files
