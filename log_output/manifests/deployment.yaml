@@ -12,22 +12,12 @@ spec:
       labels:
         app: log-output
     spec:
-      volumes:
-        - name: shared-data
-          persistentVolumeClaim:
-            claimName: ping-log-pvc
       containers:
-        - name: log-writer
-          image: rdmon14/writer:v5
-          command: ["node", "writer.js"]
-          volumeMounts:
-            - name: shared-data
-              mountPath: /usr/src/app/files
-        - name: log-reader
-          image: rdmon14/reader:v5
-          command: ["node", "reader.js"]
+        - name: log-output
+          image: rdmon14/log-output:v22
           ports:
             - containerPort: 3000
-          volumeMounts:
-            - name: shared-data
-              mountPath: /usr/src/app/files
+          env:
+            - name: PORT
+              value: "3000"
+      # YA NO HAY SECCIÓN DE VOLUMES NI VOLUMEMOUNTS

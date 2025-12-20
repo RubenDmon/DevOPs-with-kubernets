@@ -1,8 +1,10 @@
-# Usamos una versión ligera de Node.js
 FROM node:alpine
-
-# Creamos el directorio de la app
 WORKDIR /usr/src/app
-
-# Copiamos el archivo de código
-COPY . . 
+# Copiamos solo los archivos de configuración primero
+COPY package*.json ./
+# Instalamos las dependencias limpias dentro del contenedor
+RUN npm install 
+# Luego el resto del código
+COPY . .
+EXPOSE 3000
+CMD ["node", "index.js"]
