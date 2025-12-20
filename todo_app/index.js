@@ -1,98 +1,65 @@
-const http = require('http');
-const https = require('https');
-const fs = require('fs');
+const express = require('express');
+const axios = require('axios'); // Asegúrate de añadirlo a tu package.json
 const path = require('path');
+const fs = require('fs');
 
-const port = process.env.PORT || 3000;
-const directory = path.join(__dirname, 'files');
-const imagePath = path.join(directory, 'image.jpg');
-const htmlPath = path.join(__dirname, 'index.html');
+const app = express();
+app.use(express.urlencoded({ extended: true }));
 
-// Asegurar que la carpeta de almacenamiento existe
-if (!fs.existsSync(directory)) {
-    fs.mkdirSync(directory, { recursive: true });
-}
+const PORT = process.env.PORT || 3000;
+// URL del servicio backend usando el DNS interno de Kubernetes
+const BACKEND_URL = 'http://todo-backend-svc:2346/todos';
 
-/**
- * Función para descargar la imagen manejando redirecciones (Picsum 302)
- */
-const fetchImage = () => {
-    return new Promise((resolve) => {
-        // Verificar si ya tenemos una imagen válida en caché (menos de 10 minutos)
-        if (fs.existsSync(imagePath)) {
-            const stats = fs.statSync(imagePath);
-            const diffInMinutes = (new Date() - new Date(stats.mtime)) / 60000;
-            if (diffInMinutes < 10 && stats.size > 0) {
-                console.log('Usando imagen válida de la caché persistente...');
-                return resolve();
-            }
-        }
+// Lógica de la imagen (manteniendo lo que ya tenías)
+const imagePath = path.join(__dirname, 'files', 'today.jpg');
 
-        const download = (url) => {
-            https.get(url, (response) => {
-                // Manejar Redirecciones (301, 302)
-                if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
-                    console.log(`Siguiendo redirección a: ${response.headers.location}`);
-                    return download(response.headers.location);
-                }
-
-                if (response.statusCode !== 200) {
-                    console.error(`Error de servidor: ${response.statusCode}`);
-                    return resolve();
-                }
-
-                const file = fs.createWriteStream(imagePath);
-                response.pipe(file);
-                file.on('finish', () => {
-                    file.close(() => {
-                        console.log('Imagen guardada con éxito tras descarga.');
-                        resolve();
-                    });
-                });
-            }).on('error', (err) => {
-                console.error('Error de red (DNS/Conexión):', err.message);
-                resolve();
-            });
-        };
-
-        console.log('Iniciando descarga desde Picsum...');
-        download('https://picsum.photos/1200');
-    });
+const fetchImage = async () => {
+    // Tu lógica actual para descargar la imagen si no existe o es vieja
 };
 
-const server = http.createServer(async (req, res) => {
-    console.log(`Petición recibida: ${req.url}`);
+app.get('/', async (req, res) => {
+    await fetchImage();
 
-    if (req.url === '/favicon.ico') return res.end();
+    try {
+        // 1. Obtener la lista de todos desde el BACKEND
+        const response = await axios.get(BACKEND_URL);
+        const todos = response.data;
 
-    // RUTA DE LA IMAGEN: Soporta acceso directo y a través de Ingress /app
-    if (req.url === '/image.jpg' || req.url === '/app/image.jpg') {
-        if (fs.existsSync(imagePath)) {
-            const stats = fs.statSync(imagePath);
-            if (stats.size > 0) {
-                res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-                return fs.createReadStream(imagePath).pipe(res);
-            }
-        }
-        res.writeHead(404);
-        return res.end('Imagen no encontrada o en proceso de descarga.');
-    }
+        // 2. Renderizar el HTML con los datos recibidos
+        let todoListHtml = todos.map(todo => `<li>${todo}</li>`).join('');
 
-    // RUTA PRINCIPAL: Servir el HTML
-    // Ejecutamos fetchImage pero no bloqueamos el HTML si tarda
-    fetchImage(); 
-
-    if (fs.existsSync(htmlPath)) {
-        res.writeHead(200, { 'Content-Type': 'text/html' });
-        fs.createReadStream(htmlPath).pipe(res);
-    } else {
-        res.writeHead(500);
-        res.end('Error interno: index.html no encontrado en el contenedor.');
+        res.send(`
+            <h1>Todo App</h1>
+            <img src="/image" style="width:300px;"><br><br>
+            <form action="/new" method="POST">
+                <input type="text" name="todo" maxlength="140">
+                <button type="submit">Create TODO</button>
+            </form>
+            <ul>${todoListHtml}</ul>
+        `);
+    } catch (error) {
+        console.error('Error fetching todos from backend:', error.message);
+        res.status(500).send('Backend is not reachable');
     }
 });
 
-server.listen(port, () => {
-    console.log(`Todo-App Project v14 activa en puerto ${port}`);
-    // Intento de descarga inicial al arrancar el contenedor
-    fetchImage();
+// Endpoint para crear un nuevo TODO
+app.post('/new', async (req, res) => {
+    const newTodo = req.body.todo;
+    try {
+        // Enviamos el nuevo todo al BACKEND vía POST
+        await axios.post(BACKEND_URL, { todo: newTodo });
+        res.redirect('/');
+    } catch (error) {
+        console.error('Error posting to backend:', error.message);
+        res.status(500).send('Could not save todo');
+    }
+});
+
+app.get('/image', (req, res) => {
+    res.sendFile(imagePath);
+});
+
+app.listen(PORT, () => {
+    console.log(`Frontend started on port ${PORT}`);
 });

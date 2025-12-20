@@ -23,7 +23,7 @@ spec:
             claimName: todo-image-pvc
       containers:
         - name: todo-app
-          image: rdmon14/todo_app:v18 # Sube una versión nueva
+          image: rdmon14/todo_app:v19 # Sube una versión nueva
           volumeMounts:
             - name: image-cache
               mountPath: /usr/src/app/files
