@@ -2,6 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: todo-app-ingress
+  namespace: project
   annotations:
     # Esta línea es la clave: elimina el "/app" antes de enviarlo al pod
     traefik.ingress.kubernetes.io/rewrite-target: /

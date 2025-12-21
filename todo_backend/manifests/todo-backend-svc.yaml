@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: todo-backend-svc # Este nombre es el que usa el Frontend en BACKEND_URL
+  namespace: project
 spec:
   type: ClusterIP
   selector:

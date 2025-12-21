@@ -2,6 +2,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: todo-image-pvc
+  namespace: project
 spec:
   storageClassName: local-storage # El mismo que usaste en el 1.11
   accessModes:

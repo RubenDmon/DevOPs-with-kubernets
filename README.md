@@ -22,3 +22,4 @@ This repository contains exercises and solutions developed as part of the **DevO
 - [Exercise 2.1](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/2.1)
 - [Exercise 2.2](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/2.2)
 - [Exercise 2.3](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/2.3)
+- [Exercise 2.4](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/2.4)
