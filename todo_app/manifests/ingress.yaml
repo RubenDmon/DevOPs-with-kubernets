@@ -4,26 +4,12 @@ metadata:
   name: todo-app-ingress
   namespace: project
   annotations:
-    # Esta línea es la clave: elimina el "/app" antes de enviarlo al pod
-    traefik.ingress.kubernetes.io/rewrite-target: /
+    # Si usas Traefik (k3d), esto ayuda con los prefijos
+    traefik.ingress.kubernetes.io/router.middlewares: project-strip-app-prefix@kubernetescrd
 spec:
   rules:
   - http:
       paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: log-output-svc
-            port:
-              number: 80
-      - path: /pingpong
-        pathType: Prefix
-        backend:
-          service:
-            name: ping-pong-svc
-            port:
-              number: 80
       - path: /app
         pathType: Prefix
         backend:

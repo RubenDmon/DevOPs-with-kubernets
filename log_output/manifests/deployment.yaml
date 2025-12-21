@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: log-output-dep
-  namespace: exercises 
+  namespace: exercises
 spec:
   replicas: 1
   selector:
@@ -15,10 +15,18 @@ spec:
     spec:
       containers:
         - name: log-output
-          image: rdmon14/log-output:v22
-          ports:
-            - containerPort: 3000
+          image: rdmon14/log-output:v100
           env:
-            - name: PORT
-              value: "3000"
-      # YA NO HAY SECCIÓN DE VOLUMES NI VOLUMEMOUNTS
+            - name: MESSAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: log-output-config
+                  key: MESSAGE
+          volumeMounts:
+            - name: config-volume
+              mountPath: /usr/src/app/config
+              readOnly: true
+      volumes:
+        - name: config-volume
+          configMap:
+            name: log-output-config

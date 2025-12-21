@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: log-output-ingress
+  namespace: exercises
+  annotations:
+    # Si usas Traefik (k3d), esta anotación es la correcta
+    traefik.ingress.kubernetes.io/router.middlewares: exercises-strip-prefix@kubernetescrd
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: log-output-svc
+            port:
+              number: 80
+      - path: /pingpong
+        pathType: Prefix
+        backend:
+          service:
+            name: ping-pong-svc
+            port:
+              number: 80
