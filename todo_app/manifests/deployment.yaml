@@ -13,7 +13,7 @@ spec:
       labels:
         app: todo-app
     spec:
-      dnsPolicy: "None"
+      dnsPolicy: "ClusterFirst"
       dnsConfig:
         nameservers:
           - 8.8.8.8
@@ -24,7 +24,23 @@ spec:
             claimName: todo-image-pvc
       containers:
         - name: todo-app
-          image: rdmon14/todo-app:v19 # Sube una versión nueva
+          image: rdmon14/todo-app:v33
+          env:
+            - name: FRONTEND_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: todo-app-config
+                  key: FRONTEND_PORT
+            - name: BACKEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: todo-app-config
+                  key: BACKEND_URL
+            - name: IMAGE_PATH # <--- Inyectando la ruta del archivo
+              valueFrom:
+                configMapKeyRef:
+                  name: todo-app-config
+                  key: IMAGE_PATH
           volumeMounts:
             - name: image-cache
               mountPath: /usr/src/app/files

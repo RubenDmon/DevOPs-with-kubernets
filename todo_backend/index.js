@@ -1,8 +1,9 @@
 const express = require('express');
 const app = express();
 app.use(express.json());
+const PORT = process.env.BACKEND_PORT || 3001;
 
-let todos = ['Completar el ejercicio 2.1', 'Configurar el backend'];
+let todos = ['Learn JavaScript', 'Learn React','Build a project'];
 
 // Endpoint para obtener la lista
 app.get('/todos', (req, res) => {
@@ -16,4 +17,4 @@ app.post('/todos', (req, res) => {
     res.status(201).send();
 });
 
-app.listen(3001, () => console.log('Backend listening on 3001'));
+app.listen(PORT, () => console.log(`Backend listening on ${PORT}`));

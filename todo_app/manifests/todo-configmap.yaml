@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: todo-app-config
+  namespace: project
+data:
+  # Configuración para el Frontend
+  FRONTEND_PORT: "3000"
+  BACKEND_URL: "http://todo-backend-svc:2346/todos"
+  IMAGE_PATH: "/usr/src/app/files/image.jpg" 
+  # Configuración para el Backend
+  BACKEND_PORT: "3001"
