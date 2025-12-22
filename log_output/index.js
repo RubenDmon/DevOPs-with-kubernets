@@ -14,17 +14,23 @@ const getFileContent = () => {
         return "this text is from file";
     }
 };
-
 const getPongs = () => {
     return new Promise((resolve) => {
-        http.get('http://ping-pong-svc:2345/pings', (res) => {
+        // Llamamos a /pingpong para que incremente el contador en cada carga
+        http.get('http://ping-pong-svc:2345/pingpong', (res) => {
             let data = '';
             res.on('data', (chunk) => { data += chunk; });
-            res.on('end', () => resolve(data));
-        }).on('error', () => resolve("0"));
+            res.on('end', () => {
+                // Limpiamos el texto "pong " para quedarnos solo con el número
+                const count = data.replace('pong ', '').trim();
+                resolve(count);
+            });
+        }).on('error', (err) => {
+            console.error("Error conectando a ping-pong:", err.message);
+            resolve("0");
+        });
     });
 };
-
 const server = http.createServer(async (req, res) => {
     if (req.url === '/favicon.ico') return res.end();
 

@@ -15,9 +15,12 @@ spec:
     spec:
       containers:
         - name: ping-pong
-          image: rdmon14/ping-pong:v21
+          image: rdmon14/ping-pong:v27
           ports:
             - containerPort: 3000
           env:
             - name: PORT
-              value: "3000"  
+              value: "3000"
+            # ESTA ES LA CONEXIÓN A LA DB:
+            - name: DATABASE_URL
+              value: "postgres://postgres:example@postgres-svc:5432/postgres"

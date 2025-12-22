@@ -2,11 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ping-pong-svc
-  namespace: exercises 
+  namespace: exercises
 spec:
   type: ClusterIP
   selector:
     app: ping-pong
   ports:
-    - port: 2345
+    - name: http-ingress
+      port: 80         # Para que funcione http://localhost:8081/pingpong
+      targetPort: 3000
+    - name: http-internal
+      port: 2345       # Para que funcione la llamada interna de Log-Output
       targetPort: 3000

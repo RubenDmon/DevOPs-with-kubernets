@@ -2,13 +2,13 @@ FROM node:alpine
 
 WORKDIR /usr/src/app
 
-# Copiamos los archivos de dependencias primero
+# Copiamos solo los archivos de configuración primero
 COPY package*.json ./
 
-# Instalamos las librerías
+# Instalamos las dependencias DENTRO de la imagen (aquí se crea el node_modules de Linux)
 RUN npm install
 
-# Copiamos el resto del código
+# Ahora copiamos el resto del código (el .dockerignore evitará que se sobrescriba el node_modules)
 COPY . .
 
-CMD ["node", "index.js"]
+CMD ["npm", "start"]
