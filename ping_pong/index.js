@@ -66,6 +66,11 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(204);
     return res.end();
   }
+  // HEALTH CHECK para Google Cloud Ingress
+  if (req.url === '/') {
+    res.writeHead(200);
+    return res.end("OK"); // Esto hará que el Ingress se ponga verde (Healthy)
+  }
 
   // Endpoint de Ping-Pong
   if (req.url === '/pingpong') {

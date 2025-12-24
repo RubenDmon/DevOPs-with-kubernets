@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: ping-pong
-          image: rdmon14/ping-pong:v27
+          image: rdmon14/ping-pong:v29
           ports:
             - containerPort: 3000
           env:

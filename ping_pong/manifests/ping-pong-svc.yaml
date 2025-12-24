@@ -4,10 +4,13 @@ metadata:
   name: ping-pong-svc
   namespace: exercises
 spec:
-  type: LoadBalancer # Google creará una IP externa para esto
+  type: NodePort # Obligatorio para Ingress en GKE
   selector:
     app: ping-pong
   ports:
-    - name: http
-      port: 80
+    - name: http-ingress
+      port: 80         # Para el Ingress (público)
+      targetPort: 3000
+    - name: http-internal
+      port: 2345       # Para que log-output pueda llamarlo (interno)
       targetPort: 3000
