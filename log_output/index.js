@@ -17,7 +17,7 @@ const getFileContent = () => {
 const getPongs = () => {
     return new Promise((resolve) => {
         // Llamamos a /pingpong para que incremente el contador en cada carga
-        http.get('http://ping-pong-svc:2345/pingpong', (res) => {
+        http.get('http://ping-pong-svc:2345/', (res) => {
             let data = '';
             res.on('data', (chunk) => { data += chunk; });
             res.on('end', () => {
