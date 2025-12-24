@@ -28,7 +28,7 @@ app.get('/todos', async (req, res) => {
     res.status(500).send(err.message);
   }
 });
-
+/*
 app.post('/todos', async (req, res) => {
   const { todo } = req.body;
   try {
@@ -37,6 +37,31 @@ app.post('/todos', async (req, res) => {
     }
     res.status(201).send();
   } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+*/
+app.post('/todos', async (req, res) => {
+  const { todo } = req.body;
+
+  // 1. VALIDACIÓN: Máximo 140 caracteres
+  if (todo && todo.length > 140) {
+    console.error(`Rejected: Todo is too long (${todo.length} chars). Content: ${todo.substring(0, 20)}...`);
+    return res.status(400).send('Todo is too long (max 140 characters)');
+  }
+
+  try {
+    if (todo) {
+      // 2. LOGGING: Registrar el todo recibido
+      console.log(`New todo received: "${todo}"`);
+      
+      await pool.query('INSERT INTO todos (task) VALUES ($1)', [todo]);
+      res.status(201).send();
+    } else {
+      res.status(400).send('Todo content is missing');
+    }
+  } catch (err) {
+    console.error('Database error:', err.message);
     res.status(500).send(err.message);
   }
 });

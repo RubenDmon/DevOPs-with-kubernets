@@ -1,0 +1,37 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: todo-app-ingress
+  namespace: project
+  annotations:
+    # IMPORTANTE: El formato debe ser nombre-middleware@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: project-project-strip-app-prefix@kubernetescrd
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /app
+        pathType: Prefix
+        backend:
+          service:
+            name: todo-app-svc
+            port:
+              number: 80
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: todo-backend-svc
+            port:
+              number: 2346
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: project-strip-app-prefix # El nombre que Traefik busca
+  namespace: project
+spec:
+  stripPrefix:
+    prefixes:
+      - /app
+      - /api
