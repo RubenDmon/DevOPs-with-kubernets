@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: random-todo-job
+  namespace: project
+spec:
+  schedule: "0 * * * *" # Cada hora
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: random-todo-generator
+            image: curlimages/curl
+            env:
+              - name: BACKEND_URL
+                # Usamos la URL del backend desde tu ConfigMap
+                value: "http://todo-backend-svc:2346/todos" 
+            command:
+            - /bin/sh
+            - -c
+            - |
+              # Obtener la URL aleatoria de Wikipedia
+              WIKI_URL=$(curl -s -I https://en.wikipedia.org/wiki/Special:Random | grep -i location | cut -d ' ' -f 2 | tr -d '\r')
+              
+              echo "Enviando nueva tarea: Read $WIKI_URL"
+              
+              # Enviar al backend usando la variable de entorno
+              curl -X POST $BACKEND_URL \
+                -H "Content-Type: application/json" \
+                -d "{\"todo\": \"Read $WIKI_URL\"}"
+          restartPolicy: OnFailure
