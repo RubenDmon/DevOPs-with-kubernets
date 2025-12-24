@@ -4,7 +4,7 @@ metadata:
   name: log-output-svc
   namespace: exercises
 spec:
-  type: NodePort # Requerido para Ingress en GKE
+  type: ClusterIP
   selector:
     app: log-output
   ports:
