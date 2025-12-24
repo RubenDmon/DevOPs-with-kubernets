@@ -7,7 +7,7 @@ spec:
   ports:
   - port: 5432
     name: postgres
-  clusterIP: None # Headless Service
+  clusterIP: None # Headless Service para StatefulSets
   selector:
     app: postgres
 ---
@@ -32,20 +32,20 @@ spec:
           image: postgres:16
           env:
             - name: POSTGRES_PASSWORD
-              value: "example" # En el siguiente ejercicio usaremos Secrets
+              value: "example"
           ports:
             - containerPort: 5432
               name: postgres
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
-              subPath: postgres # Recomendado para evitar errores de carpeta vacía
+              subPath: postgres # Crítico en GKE para evitar el error de carpeta 'lost+found'
   volumeClaimTemplates:
     - metadata:
         name: postgres-data
       spec:
         accessModes: ["ReadWriteOnce"]
-        storageClassName: local-path
+        # En GKE quitamos 'local-path' para que use el Provisioner automático de Google
         resources:
           requests:
-            storage: 250Mi
+            storage: 1Gi # GKE a veces tiene mínimos de 1Gi para discos persistentes

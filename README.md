@@ -29,3 +29,5 @@ This repository contains exercises and solutions developed as part of the **DevO
 - [Exercise 2.8](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/2.8)
 - [Exercise 2.9](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/2.9)
 - [Exercise 2.10](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/2.10)
+### Chapter 4
+- [Exercise 3.1](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/3.1)

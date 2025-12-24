@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ping-pong-svc
+  namespace: exercises
+spec:
+  type: LoadBalancer # Google creará una IP externa para esto
+  selector:
+    app: ping-pong
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
