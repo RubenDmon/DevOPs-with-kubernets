@@ -8,5 +8,5 @@ spec:
   selector:
     app: todo-backend
   ports:
-    - port: 2346        # Puerto de red interna
+    - port: 80        # Puerto de red interna
       targetPort: 3001  # Puerto de la app Node

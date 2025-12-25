@@ -4,7 +4,7 @@ metadata:
   name: todo-image-pvc
   namespace: project
 spec:
-  storageClassName: local-storage # El mismo que usaste en el 1.11
+  storageClassName: standard # Clase por defecto en GKE para discos SSD/Standard
   accessModes:
     - ReadWriteOnce
   resources:

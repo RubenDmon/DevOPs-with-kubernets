@@ -4,6 +4,8 @@ metadata:
   name: todo-app-dep
   namespace: project
 spec:
+  strategy:
+    type: Recreate # <--- Esto evita el bloqueo del disco
   replicas: 1
   selector:
     matchLabels:
@@ -13,18 +15,13 @@ spec:
       labels:
         app: todo-app
     spec:
-      dnsPolicy: "ClusterFirst"
-      dnsConfig:
-        nameservers:
-          - 8.8.8.8
-          - 1.1.1.1
       volumes:
         - name: image-cache
           persistentVolumeClaim:
             claimName: todo-image-pvc
       containers:
-        - name: todo-app
-          image: rdmon14/todo-app:v33
+        - name: todo-frontend
+          image: todo-frontend-image # Placeholder para Kustomize
           env:
             - name: FRONTEND_PORT
               valueFrom:
@@ -36,7 +33,7 @@ spec:
                 configMapKeyRef:
                   name: todo-app-config
                   key: BACKEND_URL
-            - name: IMAGE_PATH # <--- Inyectando la ruta del archivo
+            - name: IMAGE_PATH
               valueFrom:
                 configMapKeyRef:
                   name: todo-app-config
@@ -44,3 +41,5 @@ spec:
           volumeMounts:
             - name: image-cache
               mountPath: /usr/src/app/files
+          ports:
+            - containerPort: 3000

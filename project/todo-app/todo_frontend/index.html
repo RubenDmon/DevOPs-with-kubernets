@@ -73,20 +73,13 @@
     <h1>The project app</h1>
     <img src="/app/image" alt="Daily Todo Image">
     <div>
-        <input type="text" id="todo-input" maxlength="140" placeholder="Escribe tu tarea (max 140 caracteres)">
-        <button id="todo-button">Send</button>
+        <form action="/app/new" method="POST" class="input-group">
+        <input type="text" name="todo" id="todo-input" maxlength="140" placeholder="Escribe tu tarea (max 140 caracteres)" required>
+        <button type="submit" id="todo-button">Send</button>
+    </form>
     </div>
     <ul id="todo-list">
-        <li></li>
     </ul>
-
-    <script>
-        document.getElementById('todo-button').addEventListener('click', () => {
-            const input = document.getElementById('todo-input');
-            console.log("Todo a enviar:", input.value);
-            input.value = ''; // Limpiar campo
-        });
-    </script>
     <p>DevOps with kubernetes 2025</p>
 </body>
 </html>

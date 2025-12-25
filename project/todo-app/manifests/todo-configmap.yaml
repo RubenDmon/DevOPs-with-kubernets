@@ -6,7 +6,7 @@ metadata:
 data:
   # Configuración para el Frontend
   FRONTEND_PORT: "3000"
-  BACKEND_URL: "http://todo-backend-svc:2346/todos"
+  BACKEND_URL: "http://todo-backend-svc:80/api/todos"
   IMAGE_PATH: "/usr/src/app/files/image.jpg" 
   # Configuración para el Backend
   BACKEND_PORT: "3001"

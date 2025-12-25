@@ -5,6 +5,11 @@ app.use(express.json());
 
 const PORT = process.env.BACKEND_PORT || 3001;
 
+// --- 2. RUTA DE SALUD (Para que Google esté feliz) ---
+app.get('/', (req, res) => {
+    res.status(200).send('OK - Health Check Passed');
+});
+
 // Configuración de la conexión usando variables de entorno
 const pool = new Pool({
   host: process.env.DB_HOST,      // 'postgres-svc'
@@ -20,7 +25,7 @@ const initDb = async () => {
 };
 initDb();
 
-app.get('/todos', async (req, res) => {
+app.get('/api/todos', async (req, res) => {
   try {
     const result = await pool.query('SELECT task FROM todos');
     res.json(result.rows.map(row => row.task));
@@ -41,7 +46,7 @@ app.post('/todos', async (req, res) => {
   }
 });
 */
-app.post('/todos', async (req, res) => {
+app.post('/api/todos', async (req, res) => {
   const { todo } = req.body;
 
   // 1. VALIDACIÓN: Máximo 140 caracteres

@@ -15,7 +15,7 @@ spec:
             env:
               - name: BACKEND_URL
                 # Usamos la URL del backend desde tu ConfigMap
-                value: "http://todo-backend-svc:2346/todos" 
+                value: "http://todo-backend-svc/api/todos"
             command:
             - /bin/sh
             - -c

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-app-svc
+  namespace: project
+spec:
+  type: ClusterIP # GKE usa esto para crear el NEG (Network Endpoint Group)
+  ports:
+    - port: 80
+      targetPort: 3000 # <-- ASEGÚRATE de que esto coincida con el puerto de tu código Node.js
+  selector:
+    app: todo-app

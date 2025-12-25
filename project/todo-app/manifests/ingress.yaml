@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: todo-app-ingress
+  namespace: project
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+spec:
+  rules:
+  - http:
+      paths:
+      # 1. Rutas de la API
+      - path: /api
+        pathType: Prefix  # <--- Más seguro que ImplementationSpecific
+        backend:
+          service:
+            name: todo-backend-svc
+            port:
+              number: 80
+      # 2. Frontend (Todo lo demás)
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: todo-app-svc
+            port:
+              number: 80

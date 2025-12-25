@@ -38,15 +38,19 @@ spec:
                   key: password
             - name: POSTGRES_DB
               value: todo_db
+            # SOLUCIÓN: Definir subdirectorio para evitar carpetas de sistema como lost+found
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
+              subPath: pgdata # Esto crea la subcarpeta dentro del disco de Google
   volumeClaimTemplates:
     - metadata:
         name: postgres-storage
       spec:
         accessModes: ["ReadWriteOnce"]
-        storageClassName: local-path
+        storageClassName: standard
         resources:
           requests:
             storage: 500Mi
