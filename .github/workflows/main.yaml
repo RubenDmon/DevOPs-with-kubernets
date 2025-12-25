@@ -1,0 +1,79 @@
+name: Release Application
+
+on:
+  push:
+    branches:
+      - main # O 'master', revisa cómo se llama tu rama principal
+
+env:
+  PROJECT_ID: ${{ secrets.GKE_PROJECT }}
+  GKE_CLUSTER: dwk-cluster      # Nombre de tu clúster
+  GKE_ZONE: us-east1-b          # Tu zona
+  repo_name: repo-todo          # Nombre de tu repo en Artifact Registry
+  region: us-east1              # Región del Artifact Registry
+
+jobs:
+  build-publish-deploy:
+    name: Build, Publish and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 1. Autenticación con Google Cloud
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GKE_SA_KEY }}'
+
+      # 2. Configurar Cloud SDK
+      - name: 'Set up Cloud SDK'
+        uses: google-github-actions/setup-gcloud@v2
+
+      # 3. Configurar Docker para usar gcloud como credencial
+      - run: gcloud auth configure-docker ${{ env.region }}-docker.pkg.dev --quiet
+
+      # 4. Obtener credenciales del Clúster GKE
+      - name: 'Get GKE credentials'
+        uses: 'google-github-actions/get-gke-credentials@v2'
+        with:
+          cluster_name: '${{ env.GKE_CLUSTER }}'
+          project_id: '${{ env.PROJECT_ID }}'
+          location: '${{ env.GKE_ZONE }}'
+
+      # 5. Construir y Subir BACKEND
+      - name: Build and Push Backend
+        run: |
+          IMAGE_TAG=${{ env.region }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.repo_name }}/todo-backend:${{ github.sha }}
+          docker build -t $IMAGE_TAG ./project/todo-app/todo_backend
+          docker push $IMAGE_TAG
+          echo "BACKEND_IMAGE=$IMAGE_TAG" >> $GITHUB_ENV
+
+      # 6. Construir y Subir FRONTEND
+      - name: Build and Push Frontend
+        run: |
+          IMAGE_TAG=${{ env.region }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.repo_name }}/todo-frontend:${{ github.sha }}
+          docker build -t $IMAGE_TAG ./project/todo-app/todo_frontend
+          docker push $IMAGE_TAG
+          echo "FRONTEND_IMAGE=$IMAGE_TAG" >> $GITHUB_ENV
+
+      # 7. Configurar Kustomize
+      - name: Set up Kustomize
+        uses: imranismail/setup-kustomize@v2.1.0
+
+      # 8. Desplegar con Kustomize (Sustitución dinámica de imágenes)
+      - name: Deploy
+        run: |
+          # Nos movemos a la carpeta donde está kustomization.yaml
+          cd project/todo-app
+          
+          # Actualizamos los placeholders con las imágenes nuevas
+          kustomize edit set image todo-backend-image=${{ env.BACKEND_IMAGE }}
+          kustomize edit set image todo-frontend-image=${{ env.FRONTEND_IMAGE }}
+          
+          # Aplicamos al clúster
+          kustomize build . | kubectl apply -f -
+          
+          # Esperamos a que el despliegue termine
+          kubectl rollout status deployment/todo-backend-dep -n project
+          kubectl rollout status deployment/todo-app-dep -n project
