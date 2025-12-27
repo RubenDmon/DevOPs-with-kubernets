@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: daily-backup
+  namespace: project
+spec:
+  schedule: "0 0 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backup
+            image: google/cloud-sdk:alpine
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                echo "Instalando herramientas de Postgres..."
+                apk add --no-cache postgresql-client
+
+                echo "Autenticando con Google Cloud..."
+                gcloud auth activate-service-account --key-file=/var/secrets/google/key.json
+
+                echo "Creando backup..."
+                # Usamos la variable de entorno PGPASSWORD para autenticar
+                pg_dump -h postgres-svc -U postgres postgres > backup.sql
+
+                echo "Subiendo a GCS..."
+                # Reemplaza con TU NOMBRE DE BUCKET ABAJO
+                gsutil cp backup.sql gs://backup-todo-rdmon-2025/backup-$(date +%Y-%m-%d).sql
+                
+                echo "¡Backup completado!"
+            env:
+              - name: PGPASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: postgres-password
+                    key: POSTGRES_PASSWORD
+            volumeMounts:
+              - name: google-cloud-key-vol
+                mountPath: /var/secrets/google
+          restartPolicy: OnFailure
+          volumes:
+            - name: google-cloud-key-vol
+              secret:
+                secretName: google-cloud-key
