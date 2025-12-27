@@ -2,17 +2,15 @@ name: Release Application
 
 on:
   push:
-    # 1. ELIMINAMOS EL FILTRO DE BRANCHES
-    # Antes solo corría en 'main'. Ahora correrá en cualquier rama que subas.
-    # branches: 
-    #   - main 
+    # Se ha eliminado el filtro de 'branches' para que se ejecute en
+    # cualquier rama (main, feat-login, etc.) y cree entornos dinámicos.
 
 env:
   PROJECT_ID: ${{ secrets.GKE_PROJECT }}
-  GKE_CLUSTER: dwk-cluster
-  GKE_ZONE: us-east1-b
-  repo_name: repo-todo
-  region: us-east1
+  GKE_CLUSTER: dwk-cluster      # Nombre de tu clúster
+  GKE_ZONE: us-east1-b          # Tu zona
+  repo_name: repo-todo          # Nombre de tu repo en Artifact Registry
+  region: us-east1              # Región del Artifact Registry
 
 jobs:
   build-publish-deploy:
@@ -23,15 +21,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 1. Autenticación con Google Cloud
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GKE_SA_KEY }}'
 
+      # 2. Configurar Cloud SDK
       - name: 'Set up Cloud SDK'
         uses: google-github-actions/setup-gcloud@v2
 
+      # 3. Configurar Docker para usar gcloud como credencial
       - run: gcloud auth configure-docker ${{ env.region }}-docker.pkg.dev --quiet
 
+      # 4. Obtener credenciales del Clúster GKE
       - name: 'Get GKE credentials'
         uses: 'google-github-actions/get-gke-credentials@v2'
         with:
@@ -39,7 +41,7 @@ jobs:
           project_id: '${{ env.PROJECT_ID }}'
           location: '${{ env.GKE_ZONE }}'
 
-      # Build Backend
+      # 5. Construir y Subir BACKEND
       - name: Build and Push Backend
         run: |
           IMAGE_TAG=${{ env.region }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.repo_name }}/todo-backend:${{ github.sha }}
@@ -47,7 +49,7 @@ jobs:
           docker push $IMAGE_TAG
           echo "BACKEND_IMAGE=$IMAGE_TAG" >> $GITHUB_ENV
 
-      # Build Frontend
+      # 6. Construir y Subir FRONTEND
       - name: Build and Push Frontend
         run: |
           IMAGE_TAG=${{ env.region }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.repo_name }}/todo-frontend:${{ github.sha }}
@@ -55,44 +57,55 @@ jobs:
           docker push $IMAGE_TAG
           echo "FRONTEND_IMAGE=$IMAGE_TAG" >> $GITHUB_ENV
 
+      # 7. Configurar Kustomize
       - name: Set up Kustomize
         uses: imranismail/setup-kustomize@v2.1.0
 
-      # 2. AQUÍ ESTÁ LA MAGIA DEL NAMESPACE DINÁMICO
+      # 8. Desplegar con Kustomize (Lógica Dinámica + Secretos Automáticos)
       - name: Deploy
+        env:
+          # Inyectamos el secreto de GitHub como variable de entorno
+          PG_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
-          # A. Determinar el nombre del namespace
-          # Si la rama es 'main', usamos 'project'. Si es otra, usamos el nombre de la rama.
+          # A. Determinar el nombre del namespace según la rama
           if [ "${{ github.ref_name }}" = "main" ]; then
             NAMESPACE="project"
           else
             NAMESPACE="${{ github.ref_name }}"
           fi
           
-          echo "Desplegando en Namespace: $NAMESPACE"
+          echo "🚀 Desplegando en Namespace: $NAMESPACE"
 
-          # B. Crear el namespace si no existe (el || true evita error si ya existe)
+          # B. Crear el namespace si no existe (el || true evita errores si ya existe)
           kubectl create namespace $NAMESPACE || true
 
-          # C. Configurar el contexto para usar ese namespace por defecto
+          # C. Configurar el contexto para usar ese namespace
           kubectl config set-context --current --namespace=$NAMESPACE
 
-          # D. Entrar a la carpeta de Kustomize
+          # D. CREACIÓN AUTOMÁTICA DEL SECRETO DE BD
+          # Genera el secreto 'postgres-password' usando el valor guardado en GitHub.
+          # Usa dry-run + apply para que funcione tanto si es nuevo como si ya existe.
+          kubectl create secret generic postgres-password \
+            --from-literal=POSTGRES_PASSWORD="$PG_PASSWORD" \
+            -n $NAMESPACE \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          # E. Entrar a la carpeta de Kustomize
           cd project/todo-app
 
-          # E. Inyectar el namespace en todos los archivos YAML
+          # F. Inyectar el namespace correcto en los YAMLs
           kustomize edit set namespace $NAMESPACE
 
-          # F. Inyectar las imágenes nuevas
+          # G. Inyectar las imágenes recién construidas
           kustomize edit set image todo-backend-image=${{ env.BACKEND_IMAGE }}
           kustomize edit set image todo-frontend-image=${{ env.FRONTEND_IMAGE }}
 
-          # G. Aplicar al clúster
+          # H. Aplicar cambios al clúster
           kustomize build . | kubectl apply -f -
 
-          # H. Verificar estado (Rollout)
+          # I. Verificar que todo arrancó correctamente
           kubectl rollout status deployment/todo-backend-dep -n $NAMESPACE
           kubectl rollout status deployment/todo-app-dep -n $NAMESPACE
           
-          # I. Mostrar servicios para ver IPs (opcional)
+          # J. Mostrar servicios (útil para ver la IP en los logs)
           kubectl get services -o wide
