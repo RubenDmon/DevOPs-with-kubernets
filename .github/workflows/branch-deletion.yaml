@@ -1,0 +1,57 @@
+name: Delete Environment on Branch Deletion
+
+on:
+  delete: 
+    # Este workflow se dispara cuando ALGO se borra en GitHub
+
+env:
+  PROJECT_ID: ${{ secrets.GKE_PROJECT }}
+  GKE_CLUSTER: dwk-cluster
+  GKE_ZONE: us-east1-b
+
+jobs:
+  delete-namespace:
+    # Solo ejecutamos si lo que se borró fue una RAMA (no un tag)
+    if: github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 1. Autenticación (Igual que en main.yaml)
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GKE_SA_KEY }}'
+
+      # 2. Setup Gcloud
+      - name: 'Set up Cloud SDK'
+        uses: google-github-actions/setup-gcloud@v2
+
+      # 3. Obtener credenciales del Clúster
+      - name: 'Get GKE credentials'
+        uses: 'google-github-actions/get-gke-credentials@v2'
+        with:
+          cluster_name: '${{ env.GKE_CLUSTER }}'
+          project_id: '${{ env.PROJECT_ID }}'
+          location: '${{ env.GKE_ZONE }}'
+
+      # 4. ELIMINAR EL NAMESPACE
+      - name: Delete Namespace
+        run: |
+          # En el evento 'delete', el nombre de la rama viene en github.event.ref
+          BRANCH_NAME=${{ github.event.ref }}
+          
+          echo "Se detectó el borrado de la rama: $BRANCH_NAME"
+
+          # Protección: Nunca borrar el namespace 'project' (producción)
+          # aunque alguien lograra borrar la rama main.
+          if [ "$BRANCH_NAME" = "main" ]; then
+            echo "La rama main está protegida. No se borra el namespace 'project'."
+            exit 0
+          fi
+
+          echo "🗑️ Borrando el namespace: $BRANCH_NAME"
+          
+          # --ignore-not-found evita que falle si el namespace ya no existía
+          kubectl delete namespace $BRANCH_NAME --ignore-not-found
