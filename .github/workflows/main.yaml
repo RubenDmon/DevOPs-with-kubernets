@@ -2,8 +2,7 @@ name: Release Application
 
 on:
   push:
-    # Se ha eliminado el filtro de 'branches' para que se ejecute en
-    # cualquier rama (main, feat-login, etc.) y cree entornos dinámicos.
+    # Se ejecuta en cualquier rama para soportar entornos dinámicos
 
 env:
   PROJECT_ID: ${{ secrets.GKE_PROJECT }}
@@ -30,7 +29,7 @@ jobs:
       - name: 'Set up Cloud SDK'
         uses: google-github-actions/setup-gcloud@v2
 
-      # 3. Configurar Docker para usar gcloud como credencial
+      # 3. Configurar Docker
       - run: gcloud auth configure-docker ${{ env.region }}-docker.pkg.dev --quiet
 
       # 4. Obtener credenciales del Clúster GKE
@@ -61,11 +60,13 @@ jobs:
       - name: Set up Kustomize
         uses: imranismail/setup-kustomize@v2.1.0
 
-      # 8. Desplegar con Kustomize (Lógica Dinámica + Secretos Automáticos)
+      # 8. Desplegar (Aquí está toda la magia de los secretos)
       - name: Deploy
         env:
-          # Inyectamos el secreto de GitHub como variable de entorno
+          # Secreto para la Base de Datos
           PG_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          # Secreto para el Backup (JSON de Google Cloud)
+          BACKUP_KEY: ${{ secrets.GCP_BACKUP_KEY_JSON }}
         run: |
           # A. Determinar el nombre del namespace según la rama
           if [ "${{ github.ref_name }}" = "main" ]; then
@@ -76,36 +77,47 @@ jobs:
           
           echo "🚀 Desplegando en Namespace: $NAMESPACE"
 
-          # B. Crear el namespace si no existe (el || true evita errores si ya existe)
+          # B. Crear el namespace si no existe
           kubectl create namespace $NAMESPACE || true
 
-          # C. Configurar el contexto para usar ese namespace
+          # C. Configurar el contexto
           kubectl config set-context --current --namespace=$NAMESPACE
 
-          # D. CREACIÓN AUTOMÁTICA DEL SECRETO DE BD
-          # Genera el secreto 'postgres-password' usando el valor guardado en GitHub.
-          # Usa dry-run + apply para que funcione tanto si es nuevo como si ya existe.
+          # --- AUTOMATIZACIÓN DE SECRETOS ---
+
+          # 1. Crear secreto de contraseña Postgres
           kubectl create secret generic postgres-password \
             --from-literal=POSTGRES_PASSWORD="$PG_PASSWORD" \
             -n $NAMESPACE \
             --dry-run=client -o yaml | kubectl apply -f -
 
-          # E. Entrar a la carpeta de Kustomize
+          # 2. Crear secreto de la llave Google Cloud (NUEVO)
+          # Creamos el archivo temporalmente y generamos el secreto
+          echo "$BACKUP_KEY" > key.json
+          kubectl create secret generic google-cloud-key \
+            --from-file=key.json=key.json \
+            -n $NAMESPACE \
+            --dry-run=client -o yaml | kubectl apply -f -
+          rm key.json # Borramos el archivo temporal por seguridad
+
+          # ----------------------------------
+
+          # D. Entrar a la carpeta de Kustomize
           cd project/todo-app
 
-          # F. Inyectar el namespace correcto en los YAMLs
+          # E. Inyectar el namespace correcto
           kustomize edit set namespace $NAMESPACE
 
-          # G. Inyectar las imágenes recién construidas
+          # F. Inyectar las imágenes nuevas
           kustomize edit set image todo-backend-image=${{ env.BACKEND_IMAGE }}
           kustomize edit set image todo-frontend-image=${{ env.FRONTEND_IMAGE }}
 
-          # H. Aplicar cambios al clúster
+          # G. Aplicar cambios al clúster
           kustomize build . | kubectl apply -f -
 
-          # I. Verificar que todo arrancó correctamente
+          # H. Verificar estado
           kubectl rollout status deployment/todo-backend-dep -n $NAMESPACE
           kubectl rollout status deployment/todo-app-dep -n $NAMESPACE
           
-          # J. Mostrar servicios (útil para ver la IP en los logs)
+          # I. Mostrar servicios
           kubectl get services -o wide

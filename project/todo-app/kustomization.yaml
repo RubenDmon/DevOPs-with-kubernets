@@ -22,6 +22,8 @@ resources:
   - manifests/ingress.yaml
   - manifests/cronjob.yaml
 
+  - backup-cronjob.yaml
+
 # Kustomize cambiará los nombres "fake" de los YAML por estos reales
 images:
   - name: todo-backend-image
