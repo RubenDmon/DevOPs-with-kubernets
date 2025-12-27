@@ -2,15 +2,17 @@ name: Release Application
 
 on:
   push:
-    branches:
-      - main # O 'master', revisa cómo se llama tu rama principal
+    # 1. ELIMINAMOS EL FILTRO DE BRANCHES
+    # Antes solo corría en 'main'. Ahora correrá en cualquier rama que subas.
+    # branches: 
+    #   - main 
 
 env:
   PROJECT_ID: ${{ secrets.GKE_PROJECT }}
-  GKE_CLUSTER: dwk-cluster      # Nombre de tu clúster
-  GKE_ZONE: us-east1-b          # Tu zona
-  repo_name: repo-todo          # Nombre de tu repo en Artifact Registry
-  region: us-east1              # Región del Artifact Registry
+  GKE_CLUSTER: dwk-cluster
+  GKE_ZONE: us-east1-b
+  repo_name: repo-todo
+  region: us-east1
 
 jobs:
   build-publish-deploy:
@@ -21,19 +23,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 1. Autenticación con Google Cloud
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GKE_SA_KEY }}'
 
-      # 2. Configurar Cloud SDK
       - name: 'Set up Cloud SDK'
         uses: google-github-actions/setup-gcloud@v2
 
-      # 3. Configurar Docker para usar gcloud como credencial
       - run: gcloud auth configure-docker ${{ env.region }}-docker.pkg.dev --quiet
 
-      # 4. Obtener credenciales del Clúster GKE
       - name: 'Get GKE credentials'
         uses: 'google-github-actions/get-gke-credentials@v2'
         with:
@@ -41,7 +39,7 @@ jobs:
           project_id: '${{ env.PROJECT_ID }}'
           location: '${{ env.GKE_ZONE }}'
 
-      # 5. Construir y Subir BACKEND
+      # Build Backend
       - name: Build and Push Backend
         run: |
           IMAGE_TAG=${{ env.region }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.repo_name }}/todo-backend:${{ github.sha }}
@@ -49,7 +47,7 @@ jobs:
           docker push $IMAGE_TAG
           echo "BACKEND_IMAGE=$IMAGE_TAG" >> $GITHUB_ENV
 
-      # 6. Construir y Subir FRONTEND
+      # Build Frontend
       - name: Build and Push Frontend
         run: |
           IMAGE_TAG=${{ env.region }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.repo_name }}/todo-frontend:${{ github.sha }}
@@ -57,23 +55,44 @@ jobs:
           docker push $IMAGE_TAG
           echo "FRONTEND_IMAGE=$IMAGE_TAG" >> $GITHUB_ENV
 
-      # 7. Configurar Kustomize
       - name: Set up Kustomize
         uses: imranismail/setup-kustomize@v2.1.0
 
-      # 8. Desplegar con Kustomize (Sustitución dinámica de imágenes)
+      # 2. AQUÍ ESTÁ LA MAGIA DEL NAMESPACE DINÁMICO
       - name: Deploy
         run: |
-          # Nos movemos a la carpeta donde está kustomization.yaml
-          cd project/todo-app
+          # A. Determinar el nombre del namespace
+          # Si la rama es 'main', usamos 'project'. Si es otra, usamos el nombre de la rama.
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            NAMESPACE="project"
+          else
+            NAMESPACE="${{ github.ref_name }}"
+          fi
           
-          # Actualizamos los placeholders con las imágenes nuevas
+          echo "Desplegando en Namespace: $NAMESPACE"
+
+          # B. Crear el namespace si no existe (el || true evita error si ya existe)
+          kubectl create namespace $NAMESPACE || true
+
+          # C. Configurar el contexto para usar ese namespace por defecto
+          kubectl config set-context --current --namespace=$NAMESPACE
+
+          # D. Entrar a la carpeta de Kustomize
+          cd project/todo-app
+
+          # E. Inyectar el namespace en todos los archivos YAML
+          kustomize edit set namespace $NAMESPACE
+
+          # F. Inyectar las imágenes nuevas
           kustomize edit set image todo-backend-image=${{ env.BACKEND_IMAGE }}
           kustomize edit set image todo-frontend-image=${{ env.FRONTEND_IMAGE }}
-          
-          # Aplicamos al clúster
+
+          # G. Aplicar al clúster
           kustomize build . | kubectl apply -f -
+
+          # H. Verificar estado (Rollout)
+          kubectl rollout status deployment/todo-backend-dep -n $NAMESPACE
+          kubectl rollout status deployment/todo-app-dep -n $NAMESPACE
           
-          # Esperamos a que el despliegue termine
-          kubectl rollout status deployment/todo-backend-dep -n project
-          kubectl rollout status deployment/todo-app-dep -n project
+          # I. Mostrar servicios para ver IPs (opcional)
+          kubectl get services -o wide

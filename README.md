@@ -36,3 +36,4 @@ This repository contains exercises and solutions developed as part of the **DevO
 - [Exercise 3.4](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/3.4)
 - [Exercise 3.5](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/3.5)
 - [Exercise 3.6](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/3.6)
+- [Exercise 3.7](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/3.7)
