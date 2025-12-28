@@ -62,3 +62,5 @@ In the context of database architecture, both approaches offer distinct advantag
 * **Initialization:** requires significant effort. You must provision the server, install the OS, configure security groups, install the DB engine, and tune it manually.
 * **Maintenance & Backups:** High operational overhead. You are responsible for creating backup scripts, testing restoration procedures, setting up replication manually, and applying security patches.
 * **Complexity:** Scaling requires manual configuration of new nodes and load balancing, increasing the risk of human error. 
+- [Exercise 3.10](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/3.10)
+- [Exercise 3.11](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/3.11)
