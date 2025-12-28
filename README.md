@@ -64,3 +64,4 @@ In the context of database architecture, both approaches offer distinct advantag
 * **Complexity:** Scaling requires manual configuration of new nodes and load balancing, increasing the risk of human error. 
 - [Exercise 3.10](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/3.10)
 - [Exercise 3.11](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/3.11)
+- [Exercise 3.12](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/3.12)
