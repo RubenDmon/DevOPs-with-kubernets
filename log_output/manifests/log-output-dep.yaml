@@ -15,13 +15,20 @@ spec:
     spec:
       containers:
         - name: log-output
-          image: rdmon14/log-output:v104
+          image: rdmon14/log-output:v105
           env:
             - name: MESSAGE
               valueFrom:
                 configMapKeyRef:
                   name: log-output-config
                   key: MESSAGE
+          # --- AÑADE ESTO ---
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
           volumeMounts:
             - name: config-volume
               mountPath: /usr/src/app/config

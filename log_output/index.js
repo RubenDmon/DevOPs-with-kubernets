@@ -32,6 +32,26 @@ const getPongs = () => {
     });
 };
 const server = http.createServer(async (req, res) => {
+
+    if (req.url === '/healthz') {
+    try {
+      // Intentamos conectar al servicio de Ping-pong
+      const response = await new Promise((resolve, reject) => {
+        http.get('http://ping-pong-svc:2345/', (res) => {
+           if (res.statusCode === 200) resolve(true);
+           else reject(new Error('Status ' + res.statusCode));
+        }).on('error', (err) => reject(err));
+      });
+      
+      res.writeHead(200);
+      res.end("OK");
+    } catch (err) {
+      console.error("Health check failed:", err.message);
+      res.writeHead(500);
+      res.end("Not Ready");
+    }
+    return;
+  }
     if (req.url === '/favicon.ico') return res.end();
 
     const timestamp = new Date().toISOString();
@@ -40,6 +60,7 @@ const server = http.createServer(async (req, res) => {
 
     // SALIDA EXACTA REQUERIDA
     const responseString = `file content: ${fileContent}\nenv variable: MESSAGE=${MESSAGE}\n${timestamp}: ${hash}.\nPing / Pongs: ${pongs}`;
+    
     
     console.log(responseString);
 

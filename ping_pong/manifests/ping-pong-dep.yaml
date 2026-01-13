@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: ping-pong
-          image: rdmon14/ping-pong:v30
+          image: rdmon14/ping-pong:v31
           ports:
             - containerPort: 3000
           env:
@@ -24,3 +24,10 @@ spec:
             # ESTA ES LA CONEXIÓN A LA DB:
             - name: DATABASE_URL
               value: "postgres://postgres:example@postgres-svc:5432/postgres"
+              # --- AÑADE ESTO ---
+          readinessProbe:
+            httpGet:
+              path: / # Tu ruta raíz ya hace el chequeo de la DB
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
