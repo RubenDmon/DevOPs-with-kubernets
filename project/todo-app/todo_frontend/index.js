@@ -9,7 +9,18 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.FRONTEND_PORT || 3000;
 const BACKEND_URL = process.env.BACKEND_URL;
 const IMAGE_PATH = process.env.IMAGE_PATH || path.join(__dirname, 'files', 'image.jpg');
-
+// En tu index.js (Frontend)
+app.get('/healthz', async (req, res) => {
+    // El frontend está "listo" si puede contactar al backend (opcional) 
+    // o simplemente si el servidor arrancó.
+    try {
+        // Opcional: Verificar que el backend responda
+        // await axios.get(BACKEND_URL); 
+        res.status(200).send('ok');
+    } catch (e) {
+        res.status(500).send('not ok');
+    }
+});
 // --- 1. DEFINE LA FUNCIÓN QUE FALTABA ---
 const fetchImage = async () => {
     if (fs.existsSync(IMAGE_PATH)) {

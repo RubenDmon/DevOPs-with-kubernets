@@ -18,6 +18,14 @@ spec:
           image: todo-backend-image # Kustomize reemplazará esto
           ports:
             - containerPort: 3001
+          resources:
+            requests:
+              memory: "128Mi"   # Reserva 128 MB garantizados
+              cpu: "100m"       # Reserva 10% de un CPU
+            limits:
+              memory: "256Mi"   # Máximo 256 MB (si pasa, se reinicia)
+              cpu: "500m"       # Máximo 50% de un CPU
+          # -------------------
           env:
             - name: DB_HOST
               value: "postgres-svc"
@@ -31,3 +39,16 @@ spec:
                 configMapKeyRef:
                   name: todo-app-config
                   key: BACKEND_PORT
+          readinessProbe:
+            initialDelaySeconds: 10   # Espera 10s antes de empezar a probar
+            periodSeconds: 5          # Prueba cada 5s
+            httpGet:
+              path: /healthz
+              port: 3001            # Asegúrate que este sea el puerto de tu app (3000, 8080, etc)
+          
+          livenessProbe:
+            initialDelaySeconds: 20   # Dale un poco más de tiempo para arrancar antes de matarlo
+            periodSeconds: 5
+            httpGet:
+              path: /healthz
+              port: 3001

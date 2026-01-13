@@ -24,7 +24,16 @@ const initDb = async () => {
   await pool.query('CREATE TABLE IF NOT EXISTS todos (id SERIAL PRIMARY KEY, task TEXT)');
 };
 initDb();
-
+app.get('/healthz', async (req, res) => {
+  try {
+    // Intenta una consulta simple y rápida
+    await db.query('SELECT 1') 
+    res.status(200).send('ok')
+  } catch (error) {
+    console.error('Health check failed:', error)
+    res.status(500).send('error')
+  }
+})
 app.get('/api/todos', async (req, res) => {
   try {
     const result = await pool.query('SELECT task FROM todos');
@@ -33,19 +42,6 @@ app.get('/api/todos', async (req, res) => {
     res.status(500).send(err.message);
   }
 });
-/*
-app.post('/todos', async (req, res) => {
-  const { todo } = req.body;
-  try {
-    if (todo) {
-      await pool.query('INSERT INTO todos (task) VALUES ($1)', [todo]);
-    }
-    res.status(201).send();
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
-*/
 app.post('/api/todos', async (req, res) => {
   const { todo } = req.body;
 
