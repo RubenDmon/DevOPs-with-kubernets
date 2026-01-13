@@ -67,3 +67,4 @@ In the context of database architecture, both approaches offer distinct advantag
 - [Exercise 3.12](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/3.12)
 - [Exercise 4.1](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/4.1)
 - [Exercise 4.2](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/4.2) 
+- [Exercise 4.3](https://github.com/RubenDmon/DevOPs-with-kubernets/tree/4.3) 
