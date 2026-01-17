@@ -28,7 +28,7 @@ resources:
 images:
   - name: todo-backend-image
     newName: rdmon14/todo-backend-image
-    newTag: v10
+    newTag: v14
   - name: todo-frontend-image
     newName: rdmon14/todo-frontend-image
-    newTag: v10
+    newTag: v14
