@@ -7,7 +7,7 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 
 const PORT = process.env.FRONTEND_PORT || 3000;
-// IMPORTANTE: Asumo que esta variable es algo como "http://backend-svc:2345/todos"
+// Tu ConfigMap dice: "http://todo-backend-svc:80/api/todos"
 const BACKEND_URL = process.env.BACKEND_URL; 
 const IMAGE_PATH = process.env.IMAGE_PATH || path.join(__dirname, 'files', 'image.jpg');
 
@@ -22,12 +22,7 @@ const fetchImage = async () => {
 };
 
 app.get('/healthz', async (req, res) => {
-    try {
-        // await axios.get(BACKEND_URL); 
-        res.status(200).send('ok');
-    } catch (e) {
-        res.status(500).send('not ok');
-    }
+    res.status(200).send('ok');
 });
 
 app.get('/', (req, res) => {
@@ -37,7 +32,8 @@ app.get('/', (req, res) => {
 app.get('/app', async (req, res) => {
     try {
         await fetchImage();
-        const response = await axios.get(BACKEND_URL); // GET /todos
+        // BACKEND_URL ya es ".../api/todos", así que esto hace GET a esa ruta
+        const response = await axios.get(BACKEND_URL); 
         const todos = response.data;
 
         const activeTodos = todos.filter(t => !t.done);
@@ -45,8 +41,9 @@ app.get('/app', async (req, res) => {
 
         let html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 
+        // Generar lista PENDIENTES
         const activeHtml = activeTodos.map(todo => {
-            // CORRECCIÓN 1: Leer 'todo.task' (que es como viene de la DB)
+            // Usamos 'task' porque así viene de la DB Postgres
             const text = todo.task || todo.todo || todo.text; 
             return `
             <li>
@@ -57,12 +54,10 @@ app.get('/app', async (req, res) => {
             </li>`;
         }).join('');
 
+        // Generar lista COMPLETADAS
         const doneHtml = doneTodos.map(todo => {
             const text = todo.task || todo.todo || todo.text;
-            return `
-            <li>
-                <del>${text}</del>
-            </li>`;
+            return `<li><del>${text}</del></li>`;
         }).join('');
         
         html = html.replace('id="todo-list">', `id="todo-list">${activeHtml}`);
@@ -72,40 +67,41 @@ app.get('/app', async (req, res) => {
 
     } catch (error) {
         console.error('Error:', error.message);
-        res.status(500).send('Error interno del servidor');
+        res.status(500).send('Error interno del servidor (Revisa logs del backend)');
     }
 });
 
+// Crear nueva tarea
 app.post('/app/new', async (req, res) => {
     try {
+        // Envía POST a ".../api/todos"
         await axios.post(BACKEND_URL, { todo: req.body.todo });
         res.redirect('/app');
     } catch (error) {
+        console.error("Error creando todo:", error.message);
         res.status(500).send('Error al guardar todo');
     }
 });
 
-// Ruta para servir la imagen
-app.get('/app/image', (req, res) => {
-    if (fs.existsSync(IMAGE_PATH)) {
-        res.sendFile(IMAGE_PATH);
-    } else {
-        res.status(404).send('Wait for image...');
-    }
-});
-
-// CORRECCIÓN 2: Ruta Update
+// Actualizar tarea (Mark as done)
 app.post('/app/update/:id', async (req, res) => {
     const id = req.params.id;
     try {
-        // ATENCIÓN: Si BACKEND_URL ya termina en '/todos', 
-        // concatenar otro '/todos' daría error.
-        // Opción Segura: Usar BACKEND_URL + '/' + id
+        // Concatenamos ID: ".../api/todos" + "/" + "1" = ".../api/todos/1"
+        // Coincide perfecto con la ruta PUT del backend
         await axios.put(`${BACKEND_URL}/${id}`, { done: true });
         res.redirect('/app');
     } catch (error) {
         console.error("Error updating todo:", error.message);
         res.status(500).send('Error marking todo as done');
+    }
+});
+
+app.get('/app/image', (req, res) => {
+    if (fs.existsSync(IMAGE_PATH)) {
+        res.sendFile(IMAGE_PATH);
+    } else {
+        res.status(404).send('Wait for image...');
     }
 });
 

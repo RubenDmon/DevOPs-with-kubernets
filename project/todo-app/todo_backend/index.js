@@ -1,7 +1,7 @@
 const express = require('express');
 const { Pool } = require('pg');
-const app = express();
 const cors = require('cors');
+const app = express();
 
 app.use(cors());
 app.use(express.json());
@@ -17,7 +17,7 @@ const pool = new Pool({
   port: 5432,
 });
 
-// Inicializar DB
+// Inicializar DB (Crear tabla y columna done)
 const initDb = async () => {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS todos (
@@ -34,12 +34,13 @@ const initDb = async () => {
 };
 initDb();
 
-// Ruta Healthz (usando pool, NO db)
+// Ruta Healthz (IMPORTANTE: Usa 'pool', no 'db')
 app.get('/healthz', async (req, res) => {
   try {
     await pool.query('SELECT 1');
     res.status(200).send('ok');
   } catch (error) {
+    console.error('Health check failed:', error);
     res.status(500).send('error');
   }
 });
@@ -48,10 +49,10 @@ app.get('/', (req, res) => {
   res.status(200).send('OK');
 });
 
-// --- RUTAS UNIFICADAS A /todos ---
+// --- RUTAS API (Deben coincidir con tu ConfigMap) ---
 
-// 1. GET (Traer todas)
-app.get('/todos', async (req, res) => {
+// 1. GET /api/todos
+app.get('/api/todos', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT id, task, done FROM todos');
     res.send(rows);
@@ -61,8 +62,8 @@ app.get('/todos', async (req, res) => {
   }
 });
 
-// 2. PUT (Actualizar estado)
-app.put('/todos/:id', async (req, res) => {
+// 2. PUT /api/todos/:id (Para el botón Mark as Done)
+app.put('/api/todos/:id', async (req, res) => {
   const id = req.params.id;
   try {
     await pool.query('UPDATE todos SET done = true WHERE id = $1', [id]);
@@ -73,8 +74,8 @@ app.put('/todos/:id', async (req, res) => {
   }
 });
 
-// 3. POST (Crear nueva) - IMPORTANTE: Antes tenías /api/todos aquí
-app.post('/todos', async (req, res) => {
+// 3. POST /api/todos (Crear tarea)
+app.post('/api/todos', async (req, res) => {
   const { todo } = req.body;
   if (todo && todo.length > 140) {
     return res.status(400).send('Todo is too long');
