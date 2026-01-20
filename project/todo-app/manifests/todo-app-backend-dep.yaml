@@ -27,6 +27,8 @@ spec:
               cpu: "500m"       # Máximo 50% de un CPU
           # -------------------
           env:
+            - name: NATS_URL
+              value: "nats://my-nats.default.svc.cluster.local:4222"
             - name: DB_HOST
               value: "postgres-svc"
             - name: DB_PASSWORD
