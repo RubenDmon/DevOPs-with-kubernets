@@ -1,0 +1,49 @@
+name: Build and Deploy Log-Output
+
+on:
+  push:
+    paths:
+      - 'log_output/**' # Solo corre si cambias cosas en log_output
+
+jobs:
+  build-publish:
+    name: Build, Push, Release
+    runs-on: ubuntu-latest
+    
+    # IMPORTANTE: Permisos para que el Action pueda hacer git push
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        # Usamos el SHA del commit como tag único
+        run: |
+          cd log_output
+          docker build -t rdmon14/log-output:$GITHUB_SHA .
+          docker push rdmon14/log-output:$GITHUB_SHA
+
+      - name: Set up Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Update Image Tag in Kustomize
+        run: |
+          cd log_output
+          # Cambia el tag en kustomization.yaml
+          kustomize edit set image PROJECT/IMAGE=rdmon14/log-output:$GITHUB_SHA
+
+      - name: Commit and Push changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: GitHub Actions
+          author_email: actions@github.com
+          message: "Update log-output image to $GITHUB_SHA"
+          add: 'log_output/kustomization.yaml'
